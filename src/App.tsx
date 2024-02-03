@@ -1,5 +1,5 @@
 import "./App.css";
-import Userpage from "./assets/pages/user.pages";
+import Userpage from "./pages/user.pages";
 
 function App() {
   return (
