@@ -8,22 +8,24 @@ function Userpage() {
   const [name, setName] = useState("");
   const [nickname, setNickname] = useState("");
   const [mobile, setMobile] = useState("");
+  const [uId, setUId] = useState("");
+
+  const [isUpdate, setIsUpdate] = useState(false);
+  const [userId, setUserId] = useState("");
 
   const [users, setUsers] = useState([]);
+
+  const url = "https://5dd09746c76f4f84a5f602ea93e28232.weavy.io/api/users";
+  const authToken = "wys_aefS6r557WOSENwQ5FaxCYxVKmsEYb2YBov7";
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const authToken = "wys_aefS6r557WOSENwQ5FaxCYxVKmsEYb2YBov7";
-        const response = await axios.get(
-          "https://5dd09746c76f4f84a5f602ea93e28232.weavy.io/api/users",
-          {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-            },
-          }
-        );
-        console.log(response.data.data)
+        const response = await axios.get(url, {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
         setUsers(response.data.data);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -33,22 +35,19 @@ function Userpage() {
     fetchData();
   }, []);
 
+  // not have end point
   const handleDeleteUser = async (userId: string) => {
     try {
       console.log(userId);
 
-      const authToken = "wys_aefS6r557WOSENwQ5FaxCYxVKmsEYb2YBov7";
-      await axios.delete(
-        `https://5dd09746c76f4f84a5f602ea93e28232.weavy.io/api/users/${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        }
-      );
+      await axios.delete(`${url}/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
 
-      alert("User deleted");
       loadAllUsers();
+      alert("User deleted");
     } catch (error) {
       console.error("Error deleting user:", error);
     }
@@ -56,8 +55,6 @@ function Userpage() {
 
   const handleSaveUser = async () => {
     try {
-      const authToken = "wys_aefS6r557WOSENwQ5FaxCYxVKmsEYb2YBov7";
-
       const userId = uuidv4();
 
       const postData = {
@@ -65,54 +62,92 @@ function Userpage() {
         display_name: displayName,
         email: email,
         name: name,
+        nickname: nickname,
         phone_number: mobile,
       };
 
-      const response = await axios.post(
-        "https://5dd09746c76f4f84a5f602ea93e28232.weavy.io/api/users",
-        postData,
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      console.log(response);
-      alert("user saved");
+      await axios.post(url, postData, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
       loadAllUsers();
+      handleReset();
+      alert("user saved");
     } catch (error) {
       console.error("Error posting data:", error);
     }
   };
 
-  const loadAllUsers = async () => {
-    console.log("start data fetching");
+  const handleUpdateUser = async () => {
     try {
-      const authToken = "wys_aefS6r557WOSENwQ5FaxCYxVKmsEYb2YBov7";
+      const postData = {
+        uid: uId,
+        display_name: displayName,
+        email: email,
+        name: name,
+        nickname: nickname,
+        phone_number: mobile,
+      };
 
-      const response = await axios.get(
-        "https://5dd09746c76f4f84a5f602ea93e28232.weavy.io/api/users",
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        }
-      );
-      console.log(response);
+      await axios.patch(`${url}/${userId}`, postData, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json",
+        },
+      });
 
+      loadAllUsers();
+      handleReset();
+      alert("User updated");
+    } catch (error) {
+      console.error("Error updating data:", error);
+    }
+  };
+
+  const handleEditUser = (user: any) => {
+    console.log(user);
+    setUserId(user.id ? user.id : "");
+    setUId(user.uid ? user.uid : "");
+    setDisplayName(user.display_name ? user.display_name : "");
+    setEmail(user.email ? user.email : "");
+    setName(user.name ? user.name : "");
+    setNickname(user.nickname ? user.nickname : "");
+    setMobile(user.phone_number ? user.phone_number : "");
+    setIsUpdate(true);
+  };
+
+  const handleReset = () => {
+    setDisplayName("");
+    setEmail("");
+    setName("");
+    setNickname("");
+    setMobile("");
+    setIsUpdate(false);
+  };
+
+  const loadAllUsers = async () => {
+    try {
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
       setUsers(response.data.data);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
-    console.log("end data fetching");
   };
 
   return (
     <div>
-      <div>
+      <div className="input_sexction">
         <form className="user_form">
+          {isUpdate && <label>{userId}</label>}
           <input
+            disabled={isUpdate}
             placeholder="display_name"
             value={displayName}
             onChange={(e) => {
@@ -147,22 +182,32 @@ function Userpage() {
               setMobile(e.target.value);
             }}
           />
-          <button type="button" onClick={handleSaveUser}>
-            Save
+          {isUpdate ? (
+            <button type="button" onClick={handleUpdateUser}>
+              Update
+            </button>
+          ) : (
+            <button type="button" onClick={handleSaveUser}>
+              Save
+            </button>
+          )}
+          <button type="button" onClick={handleReset}>
+            Reset
           </button>
         </form>
       </div>
       <div>
         <h2>All Users</h2>
-        <table>
-          <thead>
+        <table className="table">
+          <thead className="heder_tr">
             <tr>
               <th>ID</th>
               <th>Display Name</th>
               <th>Email</th>
-              <th>Name</th>
+              {/* <th>Name</th> */}
               <th>Phone Number</th>
-              <th>Action</th>
+              <th>Edit</th>
+              <th>Delete</th>
             </tr>
           </thead>
           <tbody>
@@ -171,8 +216,11 @@ function Userpage() {
                 <td>{user.id}</td>
                 <td>{user.display_name}</td>
                 <td>{user.email}</td>
-                <td>{user.name}</td>
+                {/* <td>{user.name}</td> */}
                 <td>{user.phone_number}</td>
+                <td>
+                  <button onClick={() => handleEditUser(user)}>Edit</button>
+                </td>
                 <td>
                   <button onClick={() => handleDeleteUser(user.id)}>
                     Delete
